@@ -4,6 +4,7 @@
 
 int lineno = 0;
 extern int pass;
+extern char *buffer_text;
 
 int start_replacing = 0;
 
@@ -13,6 +14,9 @@ YY_BUFFER_STATE expansion_buffer;*/
 YY_BUFFER_STATE buffer_stack[10];
 int bufferpos = 0;
 int for_nest = 0;
+
+YY_BUFFER_STATE for_stack[10];
+int forpos = 0;
 
 %}
 
@@ -36,12 +40,18 @@ label           [a-zA-Z][a-zA-Z0-9_]*
 <INITIAL,FOR_TERM>[0-9]+ 		        { yylval->number = atoi(yyget_text(yyscanner)); return TOK_NUMBER; }
 org 			{ return TOK_ORG; }
 end 			{ return TOK_END; }
-<INITIAL>for		{ BEGIN(FOR_TERM); for_nest++; return TOK_FOR; }
+<INITIAL>for		{ BEGIN(FOR_TERM); printf("here?!\n"); for_nest++; return TOK_FOR; }
 <FOR_TERM>\n 		{ BEGIN(FOR_GOBBLE); }
 <FOR_TERM>{space}* 	;
 <FOR_GOBBLE>for 	{ for_nest++; yylval->string = yyget_text(yyscanner); return TOK_FOR_GOBBLE; }
 <FOR_GOBBLE>rof         { if ((--for_nest) == 0) {
+				fprintf(stderr, "blah! %s", buffer_text);
 				BEGIN(INITIAL);
+				if (buffer_text) {
+					for_stack[++forpos] = YY_CURRENT_BUFFER;
+					printf("going to push %s\n", buffer_text);
+					yy_switch_to_buffer(yy_scan_string(strdup(buffer_text), yyscanner), yyscanner);
+				}
 				return TOK_ROF;
 			} else {
 				yylval->string = yyget_text(yyscanner);
@@ -79,6 +89,10 @@ equ 			{ BEGIN(GOBBLE_SPACE); return TOK_EQU; }
 	if (bufferpos > 0) {
 		yy_delete_buffer(YY_CURRENT_BUFFER, yyscanner);
 		yy_switch_to_buffer(buffer_stack[bufferpos--], yyscanner);
+	} else if (forpos > 0) {
+		printf("and here?!\n");
+		yy_delete_buffer(YY_CURRENT_BUFFER, yyscanner);
+		yy_switch_to_buffer(buffer_stack[forpos--], yyscanner);
 	} else {
 		yyterminate();
 	}

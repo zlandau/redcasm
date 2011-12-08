@@ -25,6 +25,7 @@ int nsymbols = 0;
 struct symbol_t *symboldb_local[MAXLOCALLIST];
 int pass = 1;
 int origin = 0;
+char *buffer_text = NULL;
 
 struct label_list_t {
 	char *labels[10];
@@ -424,7 +425,7 @@ equ: TOK_EQU TOK_GOBBLE TOK_NEWLINE {
    $$[strlen($$) - 1] = '\0';
    }
 
-for: TOK_FOR expr for_gobble_list TOK_ROF TOK_NEWLINE { printf("gobble list is %s\n", $3); }
+for: TOK_FOR expr for_gobble_list { if (pass == 1) { buffer_text = $3; printf("XXX\n"); } } TOK_ROF TOK_NEWLINE { buffer_text = NULL; }
 for_gobble_list: for_gobble { $$ = malloc(256); strcpy($$, $1); }
 	       | for_gobble_list for_gobble { strcat($1, $2); $$ = $1; }
 for_gobble: TOK_FOR_GOBBLE { $$ = strdup($1); }
