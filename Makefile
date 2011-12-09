@@ -7,7 +7,7 @@ OBJS          = $(SRCS:.c=.o)
 all:            $(PROGRAM)
 
 .c.o:           $(SRCS)
-		$(CC) -c $*.c -o $@ -O
+		$(CC) -g -ggdb -c $*.c -o $@ -O
 
 parser.tab.c:   parser.y
 		bison -v -t $(YFLAGS) parser.y

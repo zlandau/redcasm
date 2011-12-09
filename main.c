@@ -10,6 +10,7 @@ extern int yydebug;
 extern char *symboldb[200];
 extern int nsymbols;
 extern int pass;
+extern int push_buffer;
 const char *parsefile;
 int val=5;
 extern int instno;
@@ -22,7 +23,7 @@ int main(int argc, char **argv)
 
 	pass2_lex_init(&scanner);
 	parsefile = strdup(argv[1]);
-	printf("parsefile is %s at %p\n", parsefile, parsefile);
+	printf("parsefile is %s at %p, scanner is %p\n", parsefile, parsefile, scanner);
 	/*yyin = fopen(parsefile, "r");*/
 	if (argc > 2) {
 		if (strcmp(argv[2], "lex") == 0)
@@ -38,12 +39,20 @@ int main(int argc, char **argv)
 
 	pass2_set_in(fopen(parsefile, "r"), scanner);
 	pass = 1;
+	fprintf(stderr, "parse 1...\n");
 	assert(pass2_parse(scanner) == 0);
+	fprintf(stderr, "parse 1 done\n");
 	/*yylex(&type, scanner);*/
+
+	printf("pass2: %p\n", pass2_get_in(scanner));
 	rewind(pass2_get_in(scanner));
 	instno = 0;
+	push_buffer = 0;
 	pass = 2;
+	fprintf(stderr, "parse 2...\n");
 	pass2_parse(scanner);
+	fprintf(stderr, "parse 2 done\n");
+
 	/*yylex(&type, scanner);*/
 	/*yyparse();*/
 	pass2_lex_destroy(scanner);

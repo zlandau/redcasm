@@ -10,6 +10,7 @@
 #define MAXSYMLIST 200
 #define MAXEQULIST 200
 #define MAXLOCALLIST 10
+#define MAXFORLIST 10
 
 /* Fix this dependency mess */
 #define PARSE_EQU 1
@@ -25,7 +26,10 @@ int nsymbols = 0;
 struct symbol_t *symboldb_local[MAXLOCALLIST];
 int pass = 1;
 int origin = 0;
+/*char *buffer_text[MAXFORLIST];*/
 char *buffer_text = NULL;
+int nbuffers = 0;
+int push_buffer = 0;
 
 struct label_list_t {
 	char *labels[10];
@@ -226,7 +230,7 @@ void set_fields(struct instruction_t *inst, int a, enum mode_t a_mode, int b, en
 		inst->modifier = get_default_modifier(inst);
 
 	if (pass == 2) {
-		printf("\t%s.%-2s %c%6d, %c%6d\n", inst_to_str[inst->opcode], mod_to_str[inst->modifier], mode_to_str[inst->a_mode], inst->a_addr, mode_to_str[inst->b_mode], inst->b_addr);
+		printf("O: \t%s.%-2s %c%6d, %c%6d\n", inst_to_str[inst->opcode], mod_to_str[inst->modifier], mode_to_str[inst->a_mode], inst->a_addr, mode_to_str[inst->b_mode], inst->b_addr);
 		}
 
 }
@@ -425,7 +429,23 @@ equ: TOK_EQU TOK_GOBBLE TOK_NEWLINE {
    $$[strlen($$) - 1] = '\0';
    }
 
-for: TOK_FOR expr for_gobble_list { if (pass == 1) { buffer_text = $3; printf("XXX\n"); } } TOK_ROF TOK_NEWLINE { buffer_text = NULL; }
+for: TOK_FOR expr for_gobble_list
+		TOK_ROF TOK_NEWLINE {
+   		if (pass == 2) {
+   			int i;
+   			printf("expr is: %d\n", $2);
+   			for (i = $2; i > 0; i--) {
+   				/* XXX: but will this run backwards? and unnecessarily nest it?\n");*/
+   				char buf[256];
+   				sprintf(buf, "%d", i+5);
+   				printf("buf is %s\n", buf);
+				symboldb[nsymbols++] = add_macro("cntit", strdup(buf));
+				pass2_push_buffer_state(pass2_create_string(strdup($3), scanner), scanner);
+				push_buffer++;
+			}
+		}
+		}
+
 for_gobble_list: for_gobble { $$ = malloc(256); strcpy($$, $1); }
 	       | for_gobble_list for_gobble { strcat($1, $2); $$ = $1; }
 for_gobble: TOK_FOR_GOBBLE { $$ = strdup($1); }
